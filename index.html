@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogos · Novomode</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{
+  --piedra:#E4E2DE; --papel:#F3F2F0; --grafito:#2B2D31; --suede:#6E6A66;
+  --linea:#CBC8C2; --rojo:#CF0A2C; --ok:#2F6B4F;
+  --serif:"Instrument Serif", "Times New Roman", serif;
+  --sans:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:15px/1.5 var(--sans);color:var(--grafito);background:var(--piedra)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--rojo);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:380px 1fr;min-height:100%}
+.panel{background:var(--papel);border-right:1px solid var(--linea);padding:28px 26px 40px;overflow-y:auto;max-height:100vh;position:sticky;top:0}
+.marca{font-weight:700;letter-spacing:.02em;font-size:14px;margin:0 0 28px;color:var(--suede)}
+.paso{border-top:1px solid var(--linea);padding:20px 0 6px}
+.paso h2{font:500 13px var(--sans);color:var(--suede);margin:0 0 12px;display:flex;gap:10px;align-items:baseline}
+.paso h2 b{font:28px/1 var(--serif);color:var(--grafito);font-weight:400}
+label{display:block;font-size:13px;font-weight:500;margin:12px 0 5px}
+.hint{font-size:12.5px;color:var(--suede);margin:4px 0 0}
+input[type=text],input[type=url],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--linea);border-radius:6px;background:#fff}
+textarea{min-height:92px;resize:vertical}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--linea);border-radius:6px;overflow:hidden;background:#fff}
+.seg button{border:0;background:none;padding:8px 4px;cursor:pointer;font-size:13.5px}
+.seg button[aria-pressed=true]{background:var(--grafito);color:#fff}
+.check{display:flex;gap:9px;align-items:center;font-weight:400;font-size:14px;margin:9px 0}
+.check input{accent-color:var(--grafito);width:16px;height:16px}
+.fila{display:flex;gap:8px;align-items:center}
+.fila input[type=text]{flex:1}
+.btn{border:1px solid var(--grafito);background:#fff;border-radius:6px;padding:10px 14px;cursor:pointer;font-weight:600;font-size:14px}
+.btn:hover{background:var(--piedra)}
+.btn-primario{background:var(--rojo);border-color:var(--rojo);color:#fff;width:100%;padding:13px;font-size:15px}
+.btn-primario:hover{background:#b0081f}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.archivo{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px dashed var(--linea);border-radius:6px;padding:9px 11px;background:#fff;font-size:13.5px}
+.archivo span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--suede)}
+.archivo.lleno span{color:var(--grafito)}
+.archivo input{display:none}
+.archivo .acc{cursor:pointer;font-weight:600;text-decoration:underline;white-space:nowrap}
+
+.main{padding:34px 40px 60px;min-width:0}
+.cabecera{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;border-bottom:1px solid var(--linea);padding-bottom:22px}
+.titulo{font:clamp(44px,6vw,84px)/.95 var(--serif);margin:0;letter-spacing:-.01em;word-break:break-word}
+.resumen{font-size:14px;color:var(--suede);text-align:right}
+.resumen strong{color:var(--grafito);font-size:20px;display:block}
+.estado{margin:16px 0 0;font-size:14px;min-height:21px}
+.estado.error{color:var(--rojo);font-weight:500}
+.barra{height:3px;background:var(--linea);margin-top:10px;overflow:hidden;visibility:hidden}
+.barra i{display:block;height:100%;width:0;background:var(--grafito);transition:width .25s}
+.herramientas{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:20px 0 6px;font-size:13.5px}
+.herramientas a{cursor:pointer;text-decoration:underline;color:var(--grafito)}
+.seccion-t{font:34px/1 var(--serif);margin:34px 0 14px;display:flex;gap:12px;align-items:baseline}
+.seccion-t small{font:13px var(--sans);color:var(--suede)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.prod{background:#fff;border:1px solid var(--linea);border-radius:8px;padding:12px;cursor:pointer;position:relative;display:flex;flex-direction:column;gap:6px;text-align:left}
+.prod.fuera{opacity:.35}
+.prod img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff}
+.prod .n{font-weight:600;font-size:14px;line-height:1.25}
+.prod .r{font-size:12.5px;color:var(--suede)}
+.prod .p{font-weight:700;font-size:14px}
+.prod .p s{font-weight:400;color:var(--suede);margin-left:6px}
+.prod .tag{position:absolute;top:10px;left:10px;background:var(--grafito);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:3px}
+.prod .sin{position:absolute;top:10px;right:10px;font-size:11px;color:var(--rojo);font-weight:600}
+.prod .marcador{position:absolute;right:10px;bottom:10px;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--grafito);background:var(--grafito)}
+.prod.fuera .marcador{background:#fff}
+.vacio{border:1px dashed var(--linea);border-radius:10px;padding:48px 28px;text-align:center;color:var(--suede);margin-top:28px;max-width:640px}
+.vacio p{margin:6px 0}
+.vacio strong{font:30px var(--serif);color:var(--grafito);display:block;font-weight:400;margin-bottom:6px}
+
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .panel{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--linea)}
+  .main{padding:26px 18px 50px}
+  .resumen{text-align:left}
+}
+@media (prefers-reduced-motion:reduce){.barra i{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="panel">
+  <p class="marca">Novomode · Generador de catálogos</p>
+
+  <section class="paso">
+    <h2><b>1</b> De dónde salen los productos</h2>
+    <label for="sitio">Web</label>
+    <select id="sitio">
+      <option value="newbalance.com.ec">New Balance · newbalance.com.ec</option>
+      <option value="sie7e.ec">Sie7e · sie7e.ec</option>
+    </select>
+    <label>Armar por</label>
+    <div class="seg" role="group" aria-label="Armar por">
+      <button type="button" data-modo="marca" aria-pressed="true">Marca</button>
+      <button type="button" data-modo="familia" aria-pressed="false">Familia</button>
+      <button type="button" data-modo="coleccion" aria-pressed="false">Link</button>
+    </div>
+    <label for="termino" id="terminoLabel">Marca</label>
+    <input type="text" id="termino" value="New Balance" autocomplete="off">
+    <p class="hint" id="terminoHint">Trae todo lo de la marca en esa web.</p>
+    <div style="margin-top:14px"><button class="btn" id="traer" style="width:100%">Traer productos</button></div>
+  </section>
+
+  <section class="paso">
+    <h2><b>2</b> Qué entra al catálogo</h2>
+    <label class="check"><input type="checkbox" id="soloNew" checked> Solo productos con etiqueta</label>
+    <input type="text" id="etiqueta" value="NEW" aria-label="Etiqueta a filtrar">
+    <p class="hint">Busca esa palabra en las etiquetas, colecciones o destacados del producto.</p>
+    <label class="check"><input type="checkbox" id="soloStock" checked> Solo con stock en la web</label>
+    <label class="check"><input type="checkbox" id="porGenero" checked> Separar en Hombre / Mujer</label>
+    <label class="check"><input type="checkbox" id="unisexAmbos" checked> Unisex en ambas secciones</label>
+    <label for="orden">Orden</label>
+    <select id="orden">
+      <option value="web">Como aparece en la web</option>
+      <option value="precioAsc">Precio: menor a mayor</option>
+      <option value="precioDesc">Precio: mayor a menor</option>
+      <option value="nombre">Nombre A–Z</option>
+    </select>
+  </section>
+
+  <section class="paso">
+    <h2><b>3</b> Portada y cierre</h2>
+    <label for="nombreCat">Nombre del catálogo</label>
+    <input type="text" id="nombreCat" value="New Arrivals">
+    <p class="hint">Se usa en el nombre del archivo y para medir las visitas (UTM).</p>
+
+    <label>Portada</label>
+    <div class="archivo" id="fPortada"><span>Sin imagen: se arma una portada con el nombre</span><label class="acc">Subir<input type="file" accept="image/*" data-slot="portada"></label></div>
+    <label>Separador Hombre <span style="font-weight:400;color:var(--suede)">(opcional)</span></label>
+    <div class="archivo" id="fHombre"><span>Sin imagen</span><label class="acc">Subir<input type="file" accept="image/*" data-slot="hombre"></label></div>
+    <label>Separador Mujer <span style="font-weight:400;color:var(--suede)">(opcional)</span></label>
+    <div class="archivo" id="fMujer"><span>Sin imagen</span><label class="acc">Subir<input type="file" accept="image/*" data-slot="mujer"></label></div>
+
+    <label>Cierre</label>
+    <div class="archivo" id="fCierre"><span>Cierre genérico con tiendas y QR</span><label class="acc">Usar imagen<input type="file" accept="image/*" data-slot="cierre"></label></div>
+    <label for="tiendas">Tiendas del cierre</label>
+    <textarea id="tiendas"></textarea>
+    <p class="hint">Una línea por ciudad. Se guarda por marca en este navegador.</p>
+  </section>
+
+  <section class="paso">
+    <h2><b>4</b> Descargar</h2>
+    <button class="btn-primario btn" id="generar" disabled>Descargar catálogo PDF</button>
+    <p class="hint" id="pesoHint">Cada producto queda con link a su página en la web.</p>
+  </section>
+</aside>
+
+<main class="main">
+  <header class="cabecera">
+    <h1 class="titulo" id="tituloVivo">New Arrivals</h1>
+    <div class="resumen" id="resumen"><strong>0</strong>productos en el catálogo</div>
+  </header>
+  <p class="estado" id="estado" role="status" aria-live="polite"></p>
+  <div class="barra" id="barra"><i></i></div>
+  <div id="contenido">
+    <div class="vacio">
+      <strong>Elige la web y trae los productos</strong>
+      <p>Aquí vas a ver lo que entra al catálogo. Toca un producto para sacarlo o volverlo a poner.</p>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+const TIENDAS_DEFECTO = {
+  "newbalance.com.ec": "QUITO: Quicentro Shopping, Scala Shopping\nCUENCA: Mall del Río\nGUAYAQUIL: Mall del Sol",
+  "sie7e.ec": "QUITO: \nGUAYAQUIL: \nCUENCA: \nMANTA: "
+};
+const MARCA_DEFECTO = { "newbalance.com.ec": "New Balance", "sie7e.ec": "" };
+const NOMBRE_WEB = { "newbalance.com.ec": "New Balance", "sie7e.ec": "Sie7e" };
+
+const estado = { modo: "marca", productos: [], plataforma: null, excluidos: new Set(), imgs: {} };
+
+// ---------- Preferencias guardadas ----------
+const guardar = (k, v) => { try { localStorage.setItem("cat:" + k, v); } catch {} };
+const leer = (k) => { try { return localStorage.getItem("cat:" + k); } catch { return null; } };
+function cargarTiendas() { $("#tiendas").value = leer("tiendas:" + $("#sitio").value) ?? TIENDAS_DEFECTO[$("#sitio").value] ?? ""; }
+$("#tiendas").addEventListener("input", e => guardar("tiendas:" + $("#sitio").value, e.target.value));
+$("#sitio").addEventListener("change", () => {
+  cargarTiendas();
+  if (estado.modo === "marca") $("#termino").value = MARCA_DEFECTO[$("#sitio").value] ?? "";
+});
+cargarTiendas();
+
+// ---------- Modo ----------
+const TEXTOS_MODO = {
+  marca: ["Marca", "Trae todo lo de la marca en esa web.", ""],
+  familia: ["Familia", "Modelo o familia: 740, 327, Fresh Foam, jeans, camisetas…", "740"],
+  coleccion: ["Link de la sección", "Pega el link de la sección de la web (ej. la pestaña NEW de la marca).", "https://www.newbalance.com.ec/collections/new"]
+};
+$$(".seg button").forEach(b => b.addEventListener("click", () => {
+  estado.modo = b.dataset.modo;
+  $$(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  const [lab, hint, ph] = TEXTOS_MODO[estado.modo];
+  $("#terminoLabel").textContent = lab; $("#terminoHint").textContent = hint;
+  $("#termino").placeholder = ph;
+  $("#termino").value = estado.modo === "marca" ? (MARCA_DEFECTO[$("#sitio").value] ?? "") : "";
+  $("#termino").focus();
+}));
+
+$("#nombreCat").addEventListener("input", e => $("#tituloVivo").textContent = e.target.value || "Catálogo");
+
+// ---------- Estado / progreso ----------
+function aviso(txt, error = false) { const el = $("#estado"); el.textContent = txt; el.classList.toggle("error", error); }
+function progreso(p) { const b = $("#barra"); b.style.visibility = p === null ? "hidden" : "visible"; b.firstElementChild.style.width = ((p || 0) * 100) + "%"; }
+
+// ---------- Traer productos ----------
+const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+async function traer() {
+  const sitio = $("#sitio").value, q = $("#termino").value.trim();
+  if (!q && estado.modo !== "marca") { aviso("Escribe la familia o pega el link de la sección.", true); return; }
+  $("#traer").disabled = true; estado.productos = []; estado.excluidos.clear();
+  aviso(`Conectando con ${sitio}…`); progreso(.05);
+  try {
+    let page = 1, hayMas = true, todos = [], vistos = new Set();
+    while (hayMas && page <= 60) {
+      const qs = new URLSearchParams({ site: sitio, modo: estado.modo, q, page });
+      if (estado.plataforma?.sitio === sitio) qs.set("plataforma", estado.plataforma.nombre);
+      const r = await fetch("/api/productos?" + qs);
+      let d; try { d = await r.json(); } catch { throw new Error("El dashboard necesita estar publicado en Netlify para leer la web (las funciones /api no responden aquí)."); }
+      if (!r.ok) throw new Error(d.error || "Error " + r.status);
+      estado.plataforma = { sitio, nombre: d.plataforma };
+      d.items.forEach(p => { if (!vistos.has(p.id)) { vistos.add(p.id); todos.push(p); } });
+      hayMas = d.hayMas; page++;
+      aviso(`Leyendo ${sitio} (${d.plataforma}): ${todos.length} productos revisados…`);
+      progreso(Math.min(.9, .1 + page * .04));
+    }
+    // En Shopify la web devuelve todo el catálogo: filtramos por marca o familia aquí.
+    if (estado.plataforma.nombre === "shopify" && estado.modo !== "coleccion" && q) {
+      const t = norm(q);
+      todos = todos.filter(p => norm([p.nombre, p.ref, p.marca, ...p.etiquetas].join(" ")).includes(t));
+    }
+    todos.forEach((p, i) => { p.orden = i; p.genero = genero(p); });
+    estado.productos = todos;
+    progreso(1); setTimeout(() => progreso(null), 400);
+    aviso(todos.length ? `Listo: ${todos.length} productos encontrados en ${sitio}.` : `No encontré productos para “${q}” en ${sitio}. Revisa el nombre o usa el link de la sección.`, !todos.length);
+    pintar();
+  } catch (e) {
+    progreso(null); aviso(e.message, true);
+  } finally { $("#traer").disabled = false; }
+}
+$("#traer").addEventListener("click", traer);
+$("#termino").addEventListener("keydown", e => { if (e.key === "Enter") traer(); });
+
+// ---------- Género ----------
+function genero(p) {
+  const t = norm([...p.etiquetas, p.nombre].join(" "));
+  if (/\b(nin[oa]s?|kids?|junior|infant|bebe)\b/.test(t)) return "Niños";
+  const muj = /\b(mujer(es)?|women|womens|woman|dama|damas|femenin[oa])\b/.test(t);
+  const hom = /\b(hombres?|men|mens|man|caballeros?|masculin[oa])\b/.test(t);
+  if (/\bunisex\b/.test(t) || (muj && hom)) return "Unisex";
+  if (muj) return "Mujer"; if (hom) return "Hombre";
+  const r = (p.ref || "").toUpperCase();
+  if (/^W/.test(r)) return "Mujer";
+  if (/^M/.test(r)) return "Hombre";
+  if (/^(U|CT|BB)/.test(r)) return "Unisex";
+  return "Unisex";
+}
+
+// ---------- Selección ----------
+function tieneEtiqueta(p, et) {
+  const e = norm(et).trim(); if (!e) return true;
+  return p.etiquetas.some(t => { const x = norm(t).trim(); return x === e || x.split(/[\s\-_/|:]+/).includes(e); });
+}
+function visibles() {
+  let l = estado.productos.slice();
+  if ($("#soloNew").checked) l = l.filter(p => tieneEtiqueta(p, $("#etiqueta").value));
+  if ($("#soloStock").checked) l = l.filter(p => p.disponible);
+  const o = $("#orden").value;
+  if (o === "precioAsc") l.sort((a, b) => (a.precio ?? 1e9) - (b.precio ?? 1e9));
+  else if (o === "precioDesc") l.sort((a, b) => (b.precio ?? 0) - (a.precio ?? 0));
+  else if (o === "nombre") l.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  else l.sort((a, b) => a.orden - b.orden);
+  return l;
+}
+function secciones() {
+  const l = visibles().filter(p => !estado.excluidos.has(p.id));
+  if (!$("#porGenero").checked) return [{ titulo: null, items: l }];
+  const amb = $("#unisexAmbos").checked;
+  const s = [
+    { titulo: "Hombre", items: l.filter(p => p.genero === "Hombre" || (amb && p.genero === "Unisex")) },
+    { titulo: "Mujer", items: l.filter(p => p.genero === "Mujer" || (amb && p.genero === "Unisex")) },
+    { titulo: "Niños", items: l.filter(p => p.genero === "Niños") }
+  ];
+  if (!amb) s.push({ titulo: "Unisex", items: l.filter(p => p.genero === "Unisex") });
+  return s.filter(x => x.items.length);
+}
+["#soloNew", "#soloStock", "#porGenero", "#unisexAmbos", "#orden"].forEach(s => $(s).addEventListener("change", pintar));
+$("#etiqueta").addEventListener("input", pintar);
+
+const precio = n => n == null ? "" : "$" + Number(n).toFixed(2);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function pintar() {
+  const cont = $("#contenido");
+  if (!estado.productos.length) { $("#generar").disabled = true; $("#resumen").innerHTML = "<strong>0</strong>productos en el catálogo"; return; }
+  const vis = visibles();
+  const n = vis.filter(p => !estado.excluidos.has(p.id)).length;
+  $("#resumen").innerHTML = `<strong>${n}</strong>productos en el catálogo`;
+  $("#generar").disabled = n === 0;
+  if (!vis.length) {
+    const et = $("#etiqueta").value;
+    const ejemplos = [...new Set(estado.productos.flatMap(p => p.etiquetas))].slice(0, 14).join(", ");
+    cont.innerHTML = `<div class="vacio"><strong>Ningún producto pasa el filtro</strong><p>Ninguno de los ${estado.productos.length} productos tiene la etiqueta “${esc(et)}”${$("#soloStock").checked ? " con stock" : ""}.</p><p>Etiquetas que sí aparecen: ${esc(ejemplos) || "ninguna"}</p></div>`;
+    return;
+  }
+  // En pantalla mostramos sin duplicar unisex
+  const grupos = {};
+  vis.forEach(p => { const g = $("#porGenero").checked ? p.genero : "Productos"; (grupos[g] ||= []).push(p); });
+  const orden = ["Hombre", "Mujer", "Unisex", "Niños", "Productos"];
+  const etq = norm($("#etiqueta").value);
+  cont.innerHTML = `<div class="herramientas"><a data-acc="todos">Incluir todos</a><a data-acc="ninguno">Sacar todos</a><span style="color:var(--suede)">Toca un producto para sacarlo o volverlo a poner.</span></div>` +
+    orden.filter(g => grupos[g]).map(g => `
+    <h3 class="seccion-t">${g}<small>${grupos[g].length} productos${g === "Unisex" && $("#unisexAmbos").checked ? " · van en Hombre y en Mujer" : ""}</small></h3>
+    <div class="grid">${grupos[g].map(p => `
+      <button type="button" class="prod ${estado.excluidos.has(p.id) ? "fuera" : ""}" data-id="${esc(p.id)}" aria-pressed="${!estado.excluidos.has(p.id)}">
+        ${$("#soloNew").checked && etq ? `<span class="tag">${esc($("#etiqueta").value.toUpperCase())}</span>` : ""}
+        ${p.disponible ? "" : `<span class="sin">Sin stock</span>`}
+        <img src="${esc(p.imagen)}" alt="" loading="lazy">
+        <span class="n">${esc(p.nombre)}</span>
+        <span class="r">REF: ${esc(p.ref || "—")}</span>
+        <span class="p">${precio(p.precio)}${p.precioAntes ? `<s>${precio(p.precioAntes)}</s>` : ""}</span>
+        <span class="marcador" aria-hidden="true"></span>
+      </button>`).join("")}</div>`).join("");
+}
+$("#contenido").addEventListener("click", e => {
+  const acc = e.target.closest("[data-acc]");
+  if (acc) { visibles().forEach(p => acc.dataset.acc === "todos" ? estado.excluidos.delete(p.id) : estado.excluidos.add(p.id)); pintar(); return; }
+  const b = e.target.closest(".prod"); if (!b) return;
+  const id = b.dataset.id; estado.excluidos.has(id) ? estado.excluidos.delete(id) : estado.excluidos.add(id); pintar();
+});
+
+// ---------- Imágenes subidas (portada, separadores, cierre) ----------
+const SLOTS = { portada: "#fPortada", hombre: "#fHombre", mujer: "#fMujer", cierre: "#fCierre" };
+const VACIO = { portada: "Sin imagen: se arma una portada con el nombre", hombre: "Sin imagen", mujer: "Sin imagen", cierre: "Cierre genérico con tiendas y QR" };
+$$("input[type=file]").forEach(inp => inp.addEventListener("change", async () => {
+  const f = inp.files[0], slot = inp.dataset.slot; if (!f) return;
+  const bmp = await createImageBitmap(f);
+  estado.imgs[slot] = aJpeg(bmp, 1240, 1754, .8, true);
+  const box = $(SLOTS[slot]); box.classList.add("lleno");
+  box.querySelector("span").textContent = f.name;
+  if (!box.querySelector(".quitar")) {
+    const q = document.createElement("a"); q.className = "acc quitar"; q.textContent = "Quitar";
+    q.addEventListener("click", () => { delete estado.imgs[slot]; box.classList.remove("lleno"); box.querySelector("span").textContent = VACIO[slot]; q.remove(); inp.value = ""; });
+    box.appendChild(q);
+  }
+}));
+
+// Redimensiona y comprime: clave para que el PDF pese poco.
+function aJpeg(bmp, maxW, maxH, calidad, cubrir) {
+  const k = Math.min(1, maxW / bmp.width, maxH / bmp.height);
+  const w = Math.round(bmp.width * k), h = Math.round(bmp.height * k);
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, w, h); x.drawImage(bmp, 0, 0, w, h);
+  return { data: c.toDataURL("image/jpeg", calidad), w, h };
+}
+
+async function imgProducto(url) {
+  const r = await fetch("/api/img?u=" + encodeURIComponent(url));
+  if (!r.ok) throw new Error("img");
+  const bmp = await createImageBitmap(await r.blob());
+  return aJpeg(bmp, 640, 480, .72);
+}
+async function pool(lista, n, fn, alAvanzar) {
+  let i = 0, hechos = 0; const out = new Array(lista.length);
+  await Promise.all(Array.from({ length: n }, async () => {
+    while (i < lista.length) { const k = i++; try { out[k] = await fn(lista[k]); } catch { out[k] = null; } alAvanzar(++hechos); }
+  }));
+  return out;
+}
+
+// ---------- PDF ----------
+const W = 595.28, H = 841.89;
+function conUTM(url, campana) {
+  try {
+    const u = new URL(url);
+    u.searchParams.set("utm_source", "catalogo"); u.searchParams.set("utm_medium", "pdf"); u.searchParams.set("utm_campaign", campana);
+    return u.toString();
+  } catch { return url; }
+}
+function slug(s) { return norm(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "catalogo"; }
+
+function imagenCubriendo(doc, img) {
+  // Llena la página completa recortando lo que sobra (como una portada impresa).
+  const r = Math.max(W / img.w, H / img.h), w = img.w * r, h = img.h * r;
+  doc.addImage(img.data, "JPEG", (W - w) / 2, (H - h) / 2, w, h, undefined, "FAST");
+}
+function paginaTitulo(doc, titulo, img) {
+  if (img) imagenCubriendo(doc, img);
+  else { doc.setFillColor(228, 226, 222); doc.rect(0, 0, W, H, "F"); }
+  doc.setFont("times", "normal"); doc.setFontSize(64);
+  doc.setTextColor(img ? 255 : 43, img ? 255 : 45, img ? 255 : 49);
+  doc.text(titulo, W / 2, H / 2 + 20, { align: "center", maxWidth: W - 80 });
+}
+
+async function generar() {
+  const secs = secciones(); if (!secs.length) return;
+  const btn = $("#generar"); btn.disabled = true;
+  const campana = slug($("#nombreCat").value);
+  const sitio = $("#sitio").value;
+  const unicos = [...new Map(secs.flatMap(s => s.items).map(p => [p.id, p])).values()];
+  aviso("Preparando fotos de producto…"); progreso(.02);
+  const fotos = await pool(unicos, 6, p => p.imagen ? imgProducto(p.imagen) : null, h => progreso(.9 * h / unicos.length));
+  const fotoDe = Object.fromEntries(unicos.map((p, i) => [p.id, fotos[i]]));
+  aviso("Armando el PDF…");
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4", compress: true });
+  const titulo = $("#nombreCat").value || "Catálogo";
+
+  // Portada
+  if (estado.imgs.portada) imagenCubriendo(doc, estado.imgs.portada);
+  else paginaTitulo(doc, titulo, null);
+  doc.link(0, 0, W, H, { url: conUTM("https://www." + sitio, campana) });
+
+  // Secciones
+  for (const s of secs) {
+    if (s.titulo) {
+      doc.addPage();
+      paginaTitulo(doc, s.titulo, estado.imgs[norm(s.titulo)] || null);
+    }
+    const porPag = 4, alto = (H - 80) / porPag;
+    for (let i = 0; i < s.items.length; i++) {
+      if (i % porPag === 0) doc.addPage();
+      const p = s.items[i], y = 40 + (i % porPag) * alto;
+      const f = fotoDe[p.id];
+      if (f) {
+        const bw = 290, bh = alto - 30, r = Math.min(bw / f.w, bh / f.h), w = f.w * r, h = f.h * r;
+        doc.addImage(f.data, "JPEG", 45 + (bw - w) / 2, y + 15 + (bh - h) / 2, w, h, undefined, "FAST");
+      }
+      const cx = 465, cy = y + alto / 2 - 22;
+      doc.setTextColor(43, 45, 49);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+      const nombre = doc.splitTextToSize(p.nombre, 200).slice(0, 2);
+      doc.text(nombre, cx, cy, { align: "center" });
+      const dy = (nombre.length - 1) * 15;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(11.5);
+      if (p.ref) doc.text("REF: " + p.ref, cx, cy + 17 + dy, { align: "center" });
+      doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+      doc.text(precio(p.precio), cx, cy + 35 + dy, { align: "center" });
+      if (p.precioAntes) {
+        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(110, 106, 102);
+        const t = precio(p.precioAntes), tw = doc.getTextWidth(t);
+        doc.text(t, cx, cy + 50 + dy, { align: "center" }); doc.line(cx - tw / 2, cy + 46.5 + dy, cx + tw / 2, cy + 46.5 + dy);
+      }
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(207, 10, 44);
+      doc.text("Comprar online", cx, cy + (p.precioAntes ? 68 : 56) + dy, { align: "center" });
+      doc.link(40, y, W - 80, alto, { url: conUTM(p.url, campana) });
+    }
+  }
+
+  // Cierre
+  doc.addPage();
+  const webUrl = conUTM("https://www." + sitio, campana);
+  if (estado.imgs.cierre) imagenCubriendo(doc, estado.imgs.cierre);
+  else {
+    doc.setFillColor(228, 226, 222); doc.rect(0, 0, W, H, "F");
+    doc.setTextColor(43, 45, 49); doc.setFont("times", "normal"); doc.setFontSize(46);
+    doc.text(NOMBRE_WEB[sitio] || titulo, W / 2, 250, { align: "center" });
+    doc.setFont("helvetica", "normal"); doc.setFontSize(12);
+    let y = 320;
+    $("#tiendas").value.split("\n").map(l => l.trim()).filter(Boolean).forEach(l => {
+      const [ciudad, ...resto] = l.split(":");
+      if (resto.length) {
+        doc.setFont("helvetica", "bold"); const cw = doc.getTextWidth(ciudad + ": ");
+        doc.setFont("helvetica", "normal"); const rw = doc.getTextWidth(resto.join(":").trim());
+        const x0 = W / 2 - (cw + rw) / 2;
+        doc.setFont("helvetica", "bold"); doc.text(ciudad + ": ", x0, y);
+        doc.setFont("helvetica", "normal"); doc.text(resto.join(":").trim(), x0 + cw, y);
+      } else doc.text(l, W / 2, y, { align: "center" });
+      y += 20;
+    });
+    // QR vectorial (pesa casi nada)
+    const qr = qrcode(0, "M"); qr.addData(webUrl); qr.make();
+    const n = qr.getModuleCount(), lado = 120, m = lado / n, qx = W / 2 - lado / 2, qy = y + 40;
+    doc.setFillColor(255, 255, 255); doc.rect(qx - 10, qy - 10, lado + 20, lado + 20, "F");
+    doc.setFillColor(43, 45, 49);
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) doc.rect(qx + c * m, qy + r * m, m + .15, m + .15, "F");
+    doc.setFontSize(12); doc.setFont("helvetica", "bold");
+    doc.text("www." + sitio, W / 2, qy + lado + 34, { align: "center" });
+  }
+  doc.link(0, 0, W, H, { url: webUrl });
+
+  const blob = doc.output("blob");
+  const mb = (blob.size / 1048576).toFixed(1);
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `${slug(NOMBRE_WEB[sitio] || sitio)}-${campana}.pdf`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  const fallidas = fotos.filter(f => !f).length;
+  progreso(null);
+  aviso(`Catálogo descargado: ${doc.getNumberOfPages()} páginas, ${mb} MB.${fallidas ? ` ${fallidas} productos salieron sin foto porque la web no la entregó.` : ""}`, false);
+  $("#pesoHint").textContent = `Último catálogo: ${mb} MB. Cada producto lleva link a la web con UTM “${campana}”.`;
+  btn.disabled = false;
+}
+$("#generar").addEventListener("click", () => generar().catch(e => { progreso(null); aviso("No se pudo armar el PDF: " + e.message, true); $("#generar").disabled = false; }));
+})();
+</script>
+</body>
+</html>
